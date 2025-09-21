@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import mapImage from "./assets/CampusMap.jpg";
 import img2 from "./assets/Dept.2.jpg";
 import img11 from "./assets/Dept.11.jpg";
@@ -263,90 +263,106 @@ const departments = [
 export default function CampusMap() {
   const [hovered, setHovered] = useState(null);
   const [selected, setSelected] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  // Detect if mobile device
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
-  // Handle click outside to close popup
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (selected && !event.target.closest('.popup-container')) {
-        setSelected(null);
-      }
-    };
+  // Get responsive marker size
+  const getMarkerSize = () => {
+    if (isMobile) return 5;
+    return 7;
+  };
 
-    if (selected) {
-      document.addEventListener('click', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [selected]);
+  // Get responsive font size for markers
+  const getMarkerFontSize = () => {
+    if (isMobile) return 2.5;
+    return 3;
+  };
 
   // Function to calculate popup position
   const getPopupPosition = (dept) => {
     const xPercent = parseFloat(dept.x);
     const yPercent = parseFloat(dept.y);
     
-    // On mobile: Center the popup both horizontally and vertically
-    if (isMobile) {
-      return {
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-      };
+    // Desktop positioning
+    if (!isMobile) {
+      let top = dept.y;
+      let left = dept.x;
+      let transform = "translate(0%, -50%)";
+      
+      if (xPercent > 65) {
+        left = dept.x;
+        transform = "translate(-100%, -50%)";
+      }
+      
+      if (yPercent < 20) {
+        top = "20%";
+        transform = transform.replace("-50%", "0%");
+      } else if (yPercent > 80) {
+        top = "80%";
+        transform = transform.replace("-50%", "-100%");
+      }
+      
+      return { top, left, transform };
     }
 
-    // Desktop positioning
+    // Mobile positioning
     let top = dept.y;
     let left = dept.x;
-    let transform = "translate(0%, -50%)"; // Right side positioning
+    let transform = "translate(0%, -50%)";
     
-    // If department is too close to right edge (within 30% of right side)
-    if (xPercent > 70) {
-      left = dept.x;
-      transform = "translate(-100%, -50%)"; // Position to the left
+    if (xPercent < 75) {
+      transform = "translate(0%, -50%)";
+    } else {
+      transform = "translate(-100%, -50%)";
     }
     
-    // If department is too close to top edge (within 20% of top)
-    if (yPercent < 25) {
-      top = "0%";
-      transform = transform.replace("-50%", "0%"); // Align to top
+    if (yPercent < 15) {
+      top = "15%";
+      transform = transform.replace("-50%", "0%");
+    } else if (yPercent > 85) {
+      top = "85%";
+      transform = transform.replace("-50%", "-100%");
     }
     
-    // If department is too close to bottom edge (within 20% of bottom)
-    if (yPercent > 80) {
-      top = "100%";
-      transform = transform.replace("-50%", "0%"); // Align to bottom
+    if (xPercent > 90) {
+      left = "90%";
+    } else if (xPercent < 5) {
+      left = "5%";
     }
-
+    
     return { top, left, transform };
   };
 
-  // Mobile-friendly marker size
-  const markerSize = isMobile ? 12 : 7;
-  const fontSize = isMobile ? 6 : 3;
+  // Handle touch events for mobile
+  const handleTouchStart = (dept) => {
+    if (isMobile) {
+      setSelected(selected && selected.id === dept.id ? null : dept);
+      setHovered(null);
+    }
+  };
+
+  // Handle mouse events for desktop
+  const handleMouseEnter = (dept) => {
+    if (!isMobile) {
+      setHovered(dept);
+    }
+  };
+
+  const handleMouseLeave = (dept) => {
+    if (!isMobile) {
+      setHovered(null);
+    }
+  };
 
   return (
     <div
       style={{
         position: "relative",
         width: "100%",
-        maxWidth: 1100,
+        maxWidth: isMobile ? "100%" : 1100,
         margin: "16px auto",
-        touchAction: "manipulation", // Improve mobile touch experience
+        minHeight: isMobile ? "400px" : "auto",
       }}
     >
       {/* Map image (responsive) */}
@@ -356,6 +372,7 @@ export default function CampusMap() {
         style={{
           width: "100%",
           height: "auto",
+          minHeight: isMobile ? "400px" : "auto",
           display: "block",
           borderRadius: 8,
           userSelect: "none",
@@ -368,15 +385,25 @@ export default function CampusMap() {
       {departments.map((d) => (
         <div
           key={d.id}
-          onMouseEnter={!isMobile ? () => setHovered(d) : undefined}
-          onMouseLeave={!isMobile ? () => setHovered((h) => (h && h.id === d.id ? null : h)) : undefined}
-          onClick={() => setSelected(d)}
-          onTouchStart={() => setSelected(d)} // Mobile touch support
+          onMouseEnter={() => handleMouseEnter(d)}
+          onMouseLeave={() => handleMouseLeave(d)}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleTouchStart(d);
+          }}
+          onClick={() => {
+            if (!isMobile) {
+              setSelected(selected && selected.id === d.id ? null : d);
+            }
+          }}
           role="button"
           aria-label={`Open ${d.name}`}
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") setSelected(d);
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setSelected(selected && selected.id === d.id ? null : d);
+            }
           }}
           style={{
             position: "absolute",
@@ -385,37 +412,32 @@ export default function CampusMap() {
             transform: "translate(-50%, -50%)",
             cursor: "pointer",
             zIndex: 5,
-            // Mobile: larger touch target
-            ...(isMobile && {
-              padding: 8, // Larger touch area
-              borderRadius: 50,
-            }),
+            width: isMobile ? "24px" : "auto",
+            height: isMobile ? "24px" : "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <div
             style={{
-              width: markerSize,
-              height: markerSize,
+              width: getMarkerSize(),
+              height: getMarkerSize(),
               borderRadius: "50%",
               background: "#1e88e5",
               color: "#ffffff",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: fontSize,
+              fontSize: getMarkerFontSize(),
               fontWeight: 700,
-              boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+              boxShadow: isMobile ? "0 1px 3px rgba(0,0,0,0.3)" : "0 2px 6px rgba(0,0,0,0.3)",
               border: "2px solid #fff",
-              ...(isMobile && {
-                width: 16,
-                height: 16,
-                fontSize: 8,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-              }),
+              transition: "all 0.2s ease",
             }}
             title={d.name}
           >
-            {d.id}
+            {isMobile ? "" : d.id}
           </div>
         </div>
       ))}
@@ -429,80 +451,105 @@ export default function CampusMap() {
             left: hovered.x,
             transform: "translate(-50%, -140%)",
             pointerEvents: "none",
-            background: "rgba(0,0,0,0.75)",
+            background: "rgba(0,0,0,0.85)",
             color: "#fff",
             padding: "6px 8px",
             borderRadius: 6,
             fontSize: 13,
             zIndex: 20,
             whiteSpace: "nowrap",
-            maxWidth: "200px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
           }}
         >
           {hovered.id}. {hovered.name}
         </div>
       )}
 
-      {/* Persistent popup (on click) */}
+      {/* Touch hint for mobile */}
+      {isMobile && !selected && (
+        <div
+          style={{
+            position: "absolute",
+            top: "10px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(0,0,0,0.7)",
+            color: "#fff",
+            padding: "8px 12px",
+            borderRadius: 20,
+            fontSize: 12,
+            zIndex: 30,
+            whiteSpace: "nowrap",
+            opacity: 0.9,
+          }}
+        >
+          Tap markers to view details
+        </div>
+      )}
+
+      {/* Smaller Persistent popup */}
       {selected && (
         <div
-          className="popup-container"
           style={{
             position: "absolute",
             ...getPopupPosition(selected),
             background: "#fff",
-            borderRadius: 12,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+            borderRadius: 10,
+            boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
             zIndex: 1000,
-            width: isMobile ? "90vw" : "auto",
-            minWidth: isMobile ? "none" : 280,
-            maxWidth: isMobile ? "90vw" : 350,
-            maxHeight: isMobile ? "80vh" : "auto",
+            width: isMobile ? "240px" : "220px", // Much smaller!
+            maxWidth: isMobile ? "85vw" : "240px",
+            minWidth: isMobile ? "220px" : "200px",
             overflow: "hidden",
-            // Mobile: center and add backdrop
-            ...(isMobile && {
-              borderRadius: 16,
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              maxHeight: "80vh",
-              width: "90vw",
-              maxWidth: "400px",
-            }),
+            maxHeight: "70vh",
           }}
         >
-          {/* Mobile backdrop overlay */}
-          {isMobile && (
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100vw",
-                height: "100vh",
-                background: "rgba(0,0,0,0.5)",
-                zIndex: -1,
-              }}
-            />
-          )}
+          {/* Arrow styling */}
+          <div
+            style={{
+              position: "absolute",
+              width: 0,
+              height: 0,
+              border: "6px solid transparent", // Smaller arrow
+              zIndex: 1001,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+          >
+            {parseFloat(selected.x) < 75 ? (
+              <div
+                style={{
+                  borderRightColor: "#fff",
+                  left: "-12px",
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  borderLeftColor: "#fff",
+                  right: "-12px",
+                }}
+              />
+            )}
+          </div>
           
-          <div style={{ padding: isMobile ? 16 : 12, maxHeight: "100%", overflowY: "auto" }}>
+          <div style={{ padding: isMobile ? "10px" : "12px" }}>
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: 12,
+                marginBottom: "8px", // Reduced spacing
               }}
             >
-              <strong style={{ 
-                fontSize: isMobile ? 18 : 15,
-                fontWeight: 600,
-                lineHeight: 1.4,
-              }}>
-                {selected.id}. {selected.name}
+              <strong 
+                style={{ 
+                  fontSize: isMobile ? 13 : 14, // Smaller text
+                  lineHeight: isMobile ? "1.2" : "1.3",
+                  fontWeight: 600,
+                }}
+              >
+                {selected.name} {/* Removed ID from title to save space */}
               </strong>
               <button
                 onClick={() => setSelected(null)}
@@ -511,32 +558,35 @@ export default function CampusMap() {
                   background: "transparent",
                   cursor: "pointer",
                   color: "#666",
-                  fontSize: isMobile ? 20 : 14,
-                  padding: 4,
-                  minWidth: 32,
-                  minHeight: 32,
+                  fontSize: isMobile ? 16 : 14,
+                  padding: "2px",
+                  lineHeight: 1,
+                  minWidth: "20px",
+                  minHeight: "20px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: "50%",
+                  transition: "all 0.2s ease",
                   ":hover": {
-                    background: "rgba(0,0,0,0.1)",
+                    background: "#f5f5f5",
+                    color: "#333",
                   },
                 }}
                 aria-label="Close popup"
               >
-                ✖
+                ×
               </button>
             </div>
 
-            {/* Image area */}
+            {/* Smaller Image area */}
             {selected.image && (
               <div
                 style={{ 
-                  marginBottom: 12, 
+                  marginBottom: "8px", // Reduced spacing
                   overflow: "hidden", 
-                  borderRadius: 8,
-                  ...(isMobile && { marginBottom: 16 })
+                  borderRadius: 6,
+                  height: isMobile ? "100px" : "90px", // Much smaller images
                 }}
               >
                 <img
@@ -544,9 +594,9 @@ export default function CampusMap() {
                   alt={`${selected.name} department`}
                   style={{
                     width: "100%",
-                    height: isMobile ? 160 : 140,
+                    height: "100%",
                     objectFit: "cover",
-                    borderRadius: 8,
+                    borderRadius: 6,
                     display: "block",
                   }}
                   onError={(e) => {
@@ -556,95 +606,67 @@ export default function CampusMap() {
               </div>
             )}
 
-            <div style={{ 
-              fontSize: isMobile ? 14 : 13, 
-              color: "#333",
-              lineHeight: 1.5,
-              marginBottom: 16
-            }}>
-              Department ID: {selected.id}
-              {isMobile && (
-                <>
-                  <br />
-                  <small style={{ color: "#666", fontSize: 12 }}>
-                    Tap outside to close
-                  </small>
-                </>
-              )}
+            {/* Compact info section */}
+            <div 
+              style={{ 
+                fontSize: isMobile ? 11 : 12, // Smaller text
+                color: "#666",
+                lineHeight: isMobile ? "1.3" : "1.4",
+                paddingBottom: "8px",
+                borderBottom: "1px solid #f0f0f0",
+                marginBottom: "8px",
+              }}
+            >
+              <div style={{ fontWeight: 500, color: "#333", marginBottom: "2px" }}>
+                ID: {selected.id}
+              </div>
+              {/* Add more compact info here if needed */}
             </div>
 
-            <div style={{ textAlign: "right" }}>
+            {/* Compact close button */}
+            <div style={{ 
+              textAlign: "center",
+              padding: "0",
+            }}>
               <button
                 onClick={() => setSelected(null)}
                 style={{
                   background: "#1e88e5",
                   color: "#fff",
                   border: "none",
-                  padding: isMobile ? "12px 20px" : "6px 12px",
-                  borderRadius: 8,
+                  padding: isMobile ? "8px 14px" : "6px 12px", // Smaller padding
+                  borderRadius: 6,
                   cursor: "pointer",
-                  fontSize: isMobile ? 14 : 13,
+                  fontSize: isMobile ? 12 : 12,
                   fontWeight: 500,
+                  width: "100%",
                   transition: "all 0.2s ease",
-                  minHeight: isMobile ? 44 : "auto", // iOS touch target minimum
                   ":hover": {
                     background: "#1565c0",
-                    transform: "translateY(-1px)",
-                  },
-                  "@media (hover: none)": {
-                    ":hover": {
-                      background: "#1e88e5",
-                      transform: "none",
-                    },
                   },
                 }}
               >
-                {isMobile ? "Close" : "Close"}
+                Close
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Mobile instructions overlay (first time only) */}
-      {isMobile && !selected && (
+      {/* Overlay to close popup on outside click (mobile only) */}
+      {isMobile && selected && (
         <div
           style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            background: "rgba(0,0,0,0.85)",
-            color: "white",
-            padding: "20px",
-            borderRadius: 12,
-            textAlign: "center",
-            maxWidth: "90vw",
-            fontSize: 16,
-            lineHeight: 1.4,
-            zIndex: 10,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "transparent",
+            zIndex: 999,
           }}
-        >
-          <h3 style={{ margin: "0 0 8px 0", fontSize: 18 }}>🏫 Campus Map</h3>
-          <p style={{ margin: "0 0 16px 0", fontSize: 14 }}>
-            Tap on any numbered marker to see department details
-          </p>
-          <button
-            onClick={() => {}}
-            style={{
-              background: "transparent",
-              border: "1px solid white",
-              color: "white",
-              padding: "8px 16px",
-              borderRadius: 6,
-              fontSize: 14,
-              cursor: "pointer",
-            }}
-          >
-            Got it!
-          </button>
-        </div>
+          onClick={() => setSelected(null)}
+        />
       )}
     </div>
   );
