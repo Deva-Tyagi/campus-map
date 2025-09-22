@@ -270,7 +270,7 @@ export default function CampusMap() {
   // Get responsive marker size
   const getMarkerSize = () => {
     if (isMobile) return 5;
-    return 7;
+    return 10;
   };
 
   // Get responsive font size for markers
@@ -424,15 +424,14 @@ export default function CampusMap() {
               width: getMarkerSize(),
               height: getMarkerSize(),
               borderRadius: "50%",
-              background: "#1e88e5",
-              color: "#ffffff",
+              background: "transparent",
+              color: "transparent",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: getMarkerFontSize(),
               fontWeight: 700,
               boxShadow: isMobile ? "0 1px 3px rgba(0,0,0,0.3)" : "0 2px 6px rgba(0,0,0,0.3)",
-              border: "2px solid #fff",
               transition: "all 0.2s ease",
             }}
             title={d.name}
