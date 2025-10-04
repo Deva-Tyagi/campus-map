@@ -224,35 +224,35 @@ const departments = [
     image: "",
   },
   { 
-    id: 31,
+    id: '',
     name: "Gymnasium", 
     x: "49.56%", 
     y: "57.3%",
     image: gym
   },
   { 
-    id: 32, 
+    id: '', 
     name: "Museum", 
     x: "51.21%", 
     y: "40.54%",
     image: museum
   },
   { 
-    id: 33, 
+    id: '', 
     name: "Swami Manmathan Auditorium", 
     x: "56.82%", 
     y: "27.8%",
     image: auditorium
   },
   { 
-    id: 34, 
+    id: '', 
     name: "Library", 
     x: "46.8%", 
     y: "32.09%",
     image: library
   },
   { 
-    id: 35, 
+    id: '', 
     name: "Horticulture Area", 
     x: "27.96%", 
     y: "65.22%",
@@ -384,7 +384,7 @@ export default function CampusMap() {
       {/* Markers */}
       {departments.map((d) => (
         <div
-          key={d.id}
+          key={d.id || d.name} // Use name as fallback for key when id is empty
           onMouseEnter={() => handleMouseEnter(d)}
           onMouseLeave={() => handleMouseLeave(d)}
           onTouchStart={(e) => {
@@ -460,7 +460,7 @@ export default function CampusMap() {
             boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
           }}
         >
-          {hovered.id}. {hovered.name}
+          {hovered.id ? `${hovered.id}. ${hovered.name}` : hovered.name}
         </div>
       )}
 
@@ -496,9 +496,9 @@ export default function CampusMap() {
             borderRadius: 10,
             boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
             zIndex: 1000,
-            width: isMobile ? "240px" : "220px", // Much smaller!
-            maxWidth: isMobile ? "85vw" : "240px",
-            minWidth: isMobile ? "220px" : "200px",
+            width: isMobile ? "280px" : "260px",
+            maxWidth: isMobile ? "90vw" : "280px",
+            minWidth: isMobile ? "260px" : "240px",
             overflow: "hidden",
             maxHeight: "70vh",
           }}
@@ -509,7 +509,7 @@ export default function CampusMap() {
               position: "absolute",
               width: 0,
               height: 0,
-              border: "6px solid transparent", // Smaller arrow
+              border: "6px solid transparent",
               zIndex: 1001,
               top: "50%",
               transform: "translateY(-50%)",
@@ -538,17 +538,17 @@ export default function CampusMap() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "8px", // Reduced spacing
+                marginBottom: "8px",
               }}
             >
               <strong 
                 style={{ 
-                  fontSize: isMobile ? 13 : 14, // Smaller text
+                  fontSize: isMobile ? 13 : 14,
                   lineHeight: isMobile ? "1.2" : "1.3",
                   fontWeight: 600,
                 }}
               >
-                {selected.name} {/* Removed ID from title to save space */}
+                {selected.name}
               </strong>
               <button
                 onClick={() => setSelected(null)}
@@ -578,14 +578,14 @@ export default function CampusMap() {
               </button>
             </div>
 
-            {/* Smaller Image area */}
+            {/* Larger Image area */}
             {selected.image && (
               <div
                 style={{ 
-                  marginBottom: "8px", // Reduced spacing
+                  marginBottom: "8px",
                   overflow: "hidden", 
                   borderRadius: 6,
-                  height: isMobile ? "100px" : "90px", // Much smaller images
+                  height: isMobile ? "140px" : "120px",
                 }}
               >
                 <img
@@ -608,7 +608,7 @@ export default function CampusMap() {
             {/* Compact info section */}
             <div 
               style={{ 
-                fontSize: isMobile ? 11 : 12, // Smaller text
+                fontSize: isMobile ? 11 : 12,
                 color: "#666",
                 lineHeight: isMobile ? "1.3" : "1.4",
                 paddingBottom: "8px",
@@ -616,9 +616,11 @@ export default function CampusMap() {
                 marginBottom: "8px",
               }}
             >
-              <div style={{ fontWeight: 500, color: "#333", marginBottom: "2px" }}>
-                ID: {selected.id}
-              </div>
+              {selected.id && (
+                <div style={{ fontWeight: 500, color: "#333", marginBottom: "2px" }}>
+                  Location ID: {selected.id}
+                </div>
+              )}
               {/* Add more compact info here if needed */}
             </div>
 
@@ -633,7 +635,7 @@ export default function CampusMap() {
                   background: "#1e88e5",
                   color: "#fff",
                   border: "none",
-                  padding: isMobile ? "8px 14px" : "6px 12px", // Smaller padding
+                  padding: isMobile ? "8px 14px" : "6px 12px",
                   borderRadius: 6,
                   cursor: "pointer",
                   fontSize: isMobile ? 12 : 12,
