@@ -384,7 +384,7 @@ export default function CampusMap() {
       {/* Markers */}
       {departments.map((d) => (
         <div
-          key={d.id || d.name} // Use name as fallback for key when id is empty
+          key={d.id || d.name}
           onMouseEnter={() => handleMouseEnter(d)}
           onMouseLeave={() => handleMouseLeave(d)}
           onTouchStart={(e) => {
@@ -423,7 +423,7 @@ export default function CampusMap() {
             style={{
               width: getMarkerSize(),
               height: getMarkerSize(),
-              borderRadius: "50%",
+              borderRadius: "0",
               background: "transparent",
               color: "transparent",
               display: "flex",
@@ -486,7 +486,7 @@ export default function CampusMap() {
         </div>
       )}
 
-      {/* Smaller Persistent popup */}
+      {/* Persistent popup */}
       {selected && (
         <div
           style={{
@@ -496,11 +496,12 @@ export default function CampusMap() {
             borderRadius: 10,
             boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
             zIndex: 1000,
-            width: isMobile ? "280px" : "260px",
-            maxWidth: isMobile ? "90vw" : "280px",
-            minWidth: isMobile ? "260px" : "240px",
+            width: isMobile ? "90vw" : "600px",
+            maxWidth: isMobile ? "90vw" : "600px",
+            minWidth: isMobile ? "260px" : "600px",
             overflow: "hidden",
-            maxHeight: "70vh",
+            maxHeight: "calc(70vh + 100px)", // Increased to accommodate image and buttons
+            overflowY: "auto", // Allow scrolling if content overflows
           }}
         >
           {/* Arrow styling */}
@@ -539,6 +540,7 @@ export default function CampusMap() {
                 justifyContent: "space-between",
                 alignItems: "center",
                 marginBottom: "8px",
+                width: "100%",
               }}
             >
               <strong 
@@ -546,6 +548,7 @@ export default function CampusMap() {
                   fontSize: isMobile ? 13 : 14,
                   lineHeight: isMobile ? "1.2" : "1.3",
                   fontWeight: 600,
+                  flexGrow: 1,
                 }}
               >
                 {selected.name}
@@ -558,15 +561,17 @@ export default function CampusMap() {
                   cursor: "pointer",
                   color: "#666",
                   fontSize: isMobile ? 16 : 14,
-                  padding: "2px",
+                  padding: "2px 6px",
                   lineHeight: 1,
-                  minWidth: "20px",
-                  minHeight: "20px",
+                  minWidth: "24px",
+                  minHeight: "24px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   borderRadius: "50%",
                   transition: "all 0.2s ease",
+                  zIndex: 1002,
+                  marginLeft: "8px",
                   ":hover": {
                     background: "#f5f5f5",
                     color: "#333",
@@ -578,14 +583,15 @@ export default function CampusMap() {
               </button>
             </div>
 
-            {/* Larger Image area */}
+            {/* Image area */}
             {selected.image && (
               <div
                 style={{ 
                   marginBottom: "8px",
                   overflow: "hidden", 
                   borderRadius: 6,
-                  height: isMobile ? "140px" : "120px",
+                  width: "100%", // Adjusted to 100% of container width
+                  height: "400px",
                 }}
               >
                 <img
@@ -628,6 +634,7 @@ export default function CampusMap() {
             <div style={{ 
               textAlign: "center",
               padding: "0",
+              marginTop: "8px", // Added margin to ensure visibility
             }}>
               <button
                 onClick={() => setSelected(null)}
